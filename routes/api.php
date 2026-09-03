@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\http\Middleware\AuthMiddleware;
 use App\Http\Controllers\AuthController;
 
 Route::get('/user', function (Request $request) {
@@ -13,13 +13,33 @@ Route::get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-//google OAuth routes
+// google OAuth routes
 Route::get('/OAuth/{provider}/redirect', [AuthController::class, 'googleOAuth']);
 Route::get('/OAuth/{provider}/callback', [AuthController::class, 'googleOAuthCallback']);
 
+// profile routes
 Route::middleware(['role:user', 'auth:sanctum'])->prefix('/profile')->group(function(){
     Route::get('/', [ProfileController::class, 'getProfile']);
     Route::post('/pfp', [ProfileController::class, 'setPfp']);
     Route::put('/', [ProfileController::class, 'updateProfile']);
-    Route::delete('/', [ProfileController::class, 'deleteProfile']);
+    Route::delete('/', [ProfileController::class, 'deleteAccount']);
 });
+
+// Collection routes
+Route::middleware(['role:user', 'auth:sanctum'])->prefix('/collections')->group(function(){
+    Route::get('/', [CollectionController::class, 'index']);
+    Route::post('/', [CollectionController::class, 'store']);
+    Route::put('/{id}', [CollectionController::class, 'update']);
+    Route::delete('/{id}', [CollectionController::class, 'destroy']);
+});
+
+// Note routes
+Route::middleware(['role:user', 'auth:sanctum'])->prefix('/notes')->group(function () {
+
+});
+
+// Updated note routes
+Route::middleware(['role:user', 'auth:sanctum'])->prefix('/updated_notes')->group(function () {
+
+});
+

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\AccessTokens;
@@ -17,7 +18,7 @@ class AuthController extends Controller
             'email' => 'required|string|email',
             'password' => 'required|min:6|string',
         ]);
-        $user = User::create($validated);
+        $user = UserResource::make(User::create($validated));
         return response()->success($user, 'User created', 200);
     }
 

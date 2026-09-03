@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['name','password','isProtected','user_id'])]
+#[Fillable(['name', 'user_id'])]
 class Collection extends Model
 {
     public function note(){
