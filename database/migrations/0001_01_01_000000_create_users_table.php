@@ -20,11 +20,11 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->string('OAuthProvider')->default('local');
             $table->string('OAuthProviderId')->unique()->nullable();
-            $table->enum('role', ['user','admin'])->default('user');
+            $table->enum('role', ['user', 'admin'])->default('user');
             $table->string('avatarUrl')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            $table->unique(['OAuthProvider','OAuthProviderId']);
+            $table->unique(['OAuthProvider', 'OAuthProviderId']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

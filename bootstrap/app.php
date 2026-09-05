@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Middleware\RoleMiddleware;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role'=>RoleMiddleware::class,
+            'role' => RoleMiddleware::class,
         ]);
         $middleware->statefulApi();
     })
@@ -24,15 +27,30 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
-        $exceptions->render(function(QueryException $e, Request $request) {
+        $exceptions->render(function (QueryException $e, Request $request) {
             $code = $e->errorInfo[1] ?? null;
-            return match($code){
-                1062 => response()->error($request->email . ' is already in use. Try Loging in instead of registering', 409),
+
+            return match ($code) {
+                1062 => response()->error($request->email.' is already in use. Try Loging in instead of registering', 409),
                 1048 => response()->error($e->errorInfo[2], 422),
                 default => response()->error($e->errorInfo[2], 500)
             };
         });
         $exceptions->render(function (Throwable $e) {
-            return response()->error($message = $e->getMessage(), $code = 500);
+            if ($e instanceof ValidationException) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            if ($e instanceof HttpExceptionInterface) {
+                return response()->error($e->getMessage(), $e->getStatusCode());
+            }
+            if ($e instanceof AuthenticationException) {
+                return response()->error($e->getMessage(), 401);
+            }
+
+            return response()->error($e->getMessage(), 500);
         });
     })->create();

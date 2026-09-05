@@ -7,35 +7,43 @@ use Illuminate\Http\Request;
 
 class CollectionController extends Controller
 {
-    // helper function 
-    private static function generateUniqueName(?string $basename, $userId){
-        $regx = '^' . preg_quote($basename, '/') . '(-[0-9]+)?$';
+    // helper function
+    private static function generateUniqueName(?string $basename, $userId)
+    {
+        $regx = '^'.preg_quote($basename, '/').'(-[0-9]+)?$';
         $existingNames = Collection::where('user_id', $userId)
-                        ->whereRaw('name REGEXP ?', [$regx])
-                        ->pluck('name')
-                        ->toArray();
-        if(count($existingNames) == 0) return $basename;
+            ->where('name', 'LIKE', $basename.'%')
+            ->pluck('name')
+            ->filter(function ($name) use ($regx) {
+                return preg_match('/'.$regx.'/', $name);
+            })
+            ->toArray();
+        if (count($existingNames) == 0) {
+            return $basename;
+        }
 
         $usedNums = [];
-        foreach($existingNames as $name){
-            if(preg_match('/^' . preg_quote($basename, '/') . '-([0-9]+)$/', $name, $match)){
-                $usedNums[] = (int)$match[1];
+        foreach ($existingNames as $name) {
+            if (preg_match('/^'.preg_quote($basename, '/').'-([0-9]+)$/', $name, $match)) {
+                $usedNums[] = (int) $match[1];
             }
         }
 
         $counter = 1;
-        while(in_array($counter, $usedNums)){
+        while (in_array($counter, $usedNums)) {
             $counter++;
         }
 
         return "{$basename}-{$counter}";
     }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $collections = Auth()->user()->collections;
+
         return response()->success($collections, 'User collections', 200);
     }
 
@@ -45,22 +53,15 @@ class CollectionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string'
+            'name' => 'required|string',
         ]);
         $validated['user_id'] = $request->user()->id;
         $validated['name'] = CollectionController::generateUniqueName($validated['name'], $request->user()->id);
 
-        $collection = Collection::create($validated)->orderBy('created_at','desc')->first(['id','name', 'user_id', 'created_at']);
-        return response()->success($collection, 'Collection created', 200);
-    }
+        $collection = Collection::create($validated);
 
-    /**
-     * Display the specified resource. 
-     */
-    // public function show(string $id)
-    // {
-    //     // Not implemented because its not needed
-    // }
+        return response()->success($collection->only(['id', 'name', 'user_id', 'created_at']), 'Collection created', 200);
+    }
 
     /**
      * Update the specified resource in storage.
@@ -69,22 +70,26 @@ class CollectionController extends Controller
     {
         $user_id = $request->user()->id;
         $col = Collection::find($id);
-        if(!$col)
+        if (! $col) {
             return response()->error('Collection not found', 404);
-        if($col->user_id != $user_id) 
+        }
+        if ($col->user_id != $user_id) {
             return response()->error('Unauthorized', 403);
+        }
 
         $validated = $request->validate([
-            'name' => 'string|nullable'
+            'name' => 'nullable|string',
         ]);
-        if(!isset($validated['name']) || $validated['name'] == ''){
+        if (! isset($validated['name']) || $validated['name'] == '') {
             return response()->success($validated, 'Nothing changed', 200);
         }
-        if(Collection::where('user_id', $user_id)->where('name', $validated['name'])->first()){
+        $existingCollection = Collection::where('user_id', $user_id)->where('name', $validated['name'])->get();
+        if (count($existingCollection) > 1) {
             $validated['name'] = CollectionController::generateUniqueName($validated['name'], $request->user()->id);
         }
         $col->update($validated);
-        return response()->success($validated['name'], 'Updated', 200);
+
+        return response()->success($col, 'Updated', 200);
     }
 
     /**
@@ -94,12 +99,15 @@ class CollectionController extends Controller
     {
         $user_id = Auth()->user()->id;
         $col = Collection::find($id);
-        if(!$col) 
+        if (! $col) {
             return response()->error('Collection not found', 404);
-        if ($col->user_id != $user_id)
+        }
+        if ($col->user_id != $user_id) {
             return response()->error('Unauthorized', 403);
+        }
 
         $col->delete();
+
         return response()->success($col, 'Deleted', 200);
     }
 }
