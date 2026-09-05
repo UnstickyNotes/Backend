@@ -41,11 +41,11 @@ class User extends Authenticatable
         ];
     }
 
-    public function note(){
+    public function notes(){
         return $this->hasMany(Note::class);    
     }
 
-    public function collection(){
-        return $this->hasMany(Note::class);
+    public function collections(){
+        return $this->hasMany(Collection::class);
     }
 }

@@ -28,7 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
             $code = $e->errorInfo[1] ?? null;
             return match($code){
                 1062 => response()->error($request->email . ' is already in use. Try Loging in instead of registering', 409),
-                1048 => response()->error($e->errorInfo[2], 422)
+                1048 => response()->error($e->errorInfo[2], 422),
+                default => response()->error($e->errorInfo[2], 500)
             };
         });
         $exceptions->render(function (Throwable $e) {

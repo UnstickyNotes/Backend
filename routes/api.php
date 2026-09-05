@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\NoteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UpdatedNoteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -35,11 +37,6 @@ Route::middleware(['role:user', 'auth:sanctum'])->prefix('/collections')->group(
 
 // Note routes
 Route::middleware(['role:user', 'auth:sanctum'])->prefix('/notes')->group(function () {
-
-});
-
-// Updated note routes
-Route::middleware(['role:user', 'auth:sanctum'])->prefix('/updated_notes')->group(function () {
-
+    Route::apiResource('',NoteController::class)->parameters(['' => 'id']);
 });
 

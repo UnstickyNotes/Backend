@@ -17,7 +17,7 @@ return new class extends Migration
             $table->longText('body')->nullable();
             $table->boolean('isOrginal')->default(true);
             $table->foreignId('user_id')->constrained('users', 'id')->cascadeOnDelete();
-            $table->foreignId('collection_id')->constrained('collections', 'id')->cascadeOnDelete();
+            $table->foreignId('collection_id')->nullable()->constrained('collections', 'id')->cascadeOnDelete();
             $table->timestamps();
         });
     }

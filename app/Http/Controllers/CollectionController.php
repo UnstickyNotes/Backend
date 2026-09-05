@@ -35,8 +35,8 @@ class CollectionController extends Controller
      */
     public function index()
     {
-        $collections = Auth()->user()->collection()->get();
-        return response()->success($collections, 'user collections', 200);
+        $collections = Auth()->user()->collections;
+        return response()->success($collections, 'User collections', 200);
     }
 
     /**
@@ -69,6 +69,8 @@ class CollectionController extends Controller
     {
         $user_id = $request->user()->id;
         $col = Collection::find($id);
+        if(!$col)
+            return response()->error('Collection not found', 404);
         if($col->user_id != $user_id) 
             return response()->error('Unauthorized', 403);
 
