@@ -21,8 +21,7 @@ class NoteFactory extends Factory
         return [
             'title' => fake()->word(),
             'body' => fake()->text(),
-            'isOrginal' => true,
-            'user_id' => User::factory(),
+            'user_id' => 3,
             'collection_id' => null,
         ];
     }

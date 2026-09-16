@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -45,7 +46,7 @@ class AuthController extends Controller
             'token' => $accessToken,
         ];
 
-        return response()->success($data, 'Loged in.', 200);
+        return response()->success($data, 'Logged in.', 200);
     }
 
     public function googleOAuth($provider)
@@ -55,32 +56,32 @@ class AuthController extends Controller
 
     public function googleOAuthCallback($provider)
     {
-        $returnedUser = Socialite::driver($provider)->stateless()->user();
-
-        if ($user = User::where('email', $returnedUser->getEmail())->first()) {
-            $user->tokens()->delete();
-            $accessToken = $user->createToken('accessToken')->plainTextToken;
-        } else {
-            $name = explode(' ', $returnedUser->getName());
-            $firstName = $name[0] ?? explode('@', $returnedUser->getEmail()[0]);
-            $lastName = $name[1] ?? '';
-            $user = User::create([
-                'OAuthProvider' => 'google',
-                'OAuthProviderId' => $returnedUser->getId(),
-                'firstName' => $firstName,
-                'lastName' => $lastName,
-                'email' => $returnedUser->getEmail(),
-                'email_verified_at' => now(),
-                'avatarUrl' => $returnedUser->getAvatar(),
-            ]);
-            $accessToken = $user->createToken('accessToken')->plainTextToken;
+        try{
+            $returnedUser = Socialite::driver($provider)->stateless()->user();
+            
+            if ($user = User::where('email', $returnedUser->getEmail())->first()) {
+                $user->tokens()->delete();
+                $accessToken = $user->createToken('accessToken')->plainTextToken;
+            } else {
+                $name = explode(' ', $returnedUser->getName());
+                $firstName = $name[0] ?? explode('@', $returnedUser->getEmail()[0]);
+                $lastName = $name[1] ?? '';
+                $user = User::create([
+                    'OAuthProvider' => 'google',
+                    'OAuthProviderId' => $returnedUser->getId(),
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'email' => $returnedUser->getEmail(),
+                    'email_verified_at' => now(),
+                    'avatarUrl' => $returnedUser->getAvatar(),
+                ]);
+                $accessToken = $user->createToken('accessToken')->plainTextToken;
+            }
+            
+            return redirect('http://localhost:5173/oauth/callback?token=' . $accessToken);
+        }catch(Throwable){
+            return redirect('http://localhost:5173/oauth/callback?error=Google+sign-in+failed');
         }
-        $data = [
-            'type' => 'Bearer',
-            'token' => $accessToken,
-        ];
-
-        return response()->success($data, 'Logged in via google', 200);
     }
 
     public function logout(Request $request)

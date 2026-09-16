@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatarUrl,
             'created_at' => $this->created_at->toIso8601String(),
             'is_admin' => $this->when($this->role === 'admin', true, false),
+            'last_synced_at' => $this->last_synced_at
         ];
     }
 }

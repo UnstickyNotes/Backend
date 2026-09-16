@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('avatarUrl')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->timestamp('last_synced_at');
             $table->unique(['OAuthProvider', 'OAuthProviderId']);
         });
 

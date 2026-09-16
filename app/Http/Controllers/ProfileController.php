@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -32,9 +33,12 @@ class ProfileController extends Controller
         return response()->success($data, 'Profile updated.', 200);
     }
 
-    public function deleteAccount(Request $request)
+    public function deleteAccount(Request $request, string $password)
     {
         $user = $request->user();
+        if (!Hash::check($password, $user->password)){
+            return response()->error('Incorrect password', 403);
+        }
         $user->tokens()->delete();
         $user->delete();
         $data = UserResource::make($user);

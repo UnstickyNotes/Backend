@@ -4,12 +4,18 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SyncController;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Connectors\SyncConnector;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+Route::get('/ping', function (){
+    return response([],200);
+});
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -23,7 +29,7 @@ Route::middleware(['auth:sanctum', 'role:user'])->prefix('/profile')->group(func
     Route::get('/', [ProfileController::class, 'getProfile']);
     Route::post('/pfp', [ProfileController::class, 'setPfp']);
     Route::put('/', [ProfileController::class, 'updateProfile']);
-    Route::delete('/', [ProfileController::class, 'deleteAccount']);
+    Route::delete('/{password}', [ProfileController::class, 'deleteAccount']);
 });
 
 // Collection routes
@@ -38,3 +44,10 @@ Route::middleware(['auth:sanctum', 'role:user'])->prefix('/collections')->group(
 Route::middleware(['auth:sanctum', 'role:user'])->prefix('/notes')->group(function () {
     Route::apiResource('', NoteController::class)->parameters(['' => 'id']);
 });
+
+Route::middleware(['auth:sanctum', 'role:user'])->prefix('/sync')->group(function() {
+    Route::get('/pull/{user_id}/{last_synced_at}', [SyncController::class, 'pull']);
+    Route::post('/push', [SyncController::class, 'push']);
+});
+
+ 
