@@ -34,7 +34,7 @@ class NoteController extends Controller
             return response()->error('You have to provide either title or body.', 422);
         }
         $validated['user_id'] = $request->user()->id;
-        $col = Collection::where('id', $validated['collection_id'] ?? -1)
+        $col = Collection::where('id', $validated['collection_id'] ?? null)
             ->where('user_id', $validated['user_id'])
             ->first();
         if (! $col) {
@@ -79,7 +79,7 @@ class NoteController extends Controller
             return response()->success('Nothing changed', 200);
         }
 
-        $col = Collection::where('id', $validated['collection_id'] ?? -1)
+        $col = Collection::where('id', $validated['collection_id'] ?? null)
             ->where('user_id', $user_id)
             ->first();
         if (! $col) {
