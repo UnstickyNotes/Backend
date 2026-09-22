@@ -54,6 +54,7 @@ class CollectionController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
+            'local_id' => 'integer'
         ]);
         $validated['user_id'] = $request->user()->id;
         $validated['name'] = CollectionController::generateUniqueName($validated['name'], $request->user()->id);

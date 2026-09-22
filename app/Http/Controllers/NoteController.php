@@ -28,18 +28,19 @@ class NoteController extends Controller
             'title' => 'nullable|string|max:50',
             'body' => 'nullable|string',
             'collection_id' => 'integer|nullable',
+            'local_id' => 'integer'
         ]);
 
         if (! isset($validated['title']) && ! isset($validated['body'])) {
             return response()->error('You have to provide either title or body.', 422);
         }
         $validated['user_id'] = $request->user()->id;
-        $col = Collection::where('id', $validated['collection_id'] ?? null)
-            ->where('user_id', $validated['user_id'])
-            ->first();
-        if (! $col) {
-            $validated['collection_id'] = null;
-        }
+        // $col = Collection::where('id', $validated['collection_id'] ?? null)
+        //     ->where('user_id', $validated['user_id'])
+        //     ->first();
+        // if (! $col) {
+        //     $validated['collection_id'] = null;
+        // }
         $note = NoteResource::make(Note::create($validated));
 
         return response()->success($note, 'Note created', 200);

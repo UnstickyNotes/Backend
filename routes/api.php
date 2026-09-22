@@ -46,8 +46,8 @@ Route::middleware(['auth:sanctum', 'role:user'])->prefix('/notes')->group(functi
 });
 
 Route::middleware(['auth:sanctum', 'role:user'])->prefix('/sync')->group(function() {
-    Route::get('/pull/{user_id}/{last_synced_at}', [SyncController::class, 'pull']);
-    Route::post('/push', [SyncController::class, 'push']);
+    Route::get('/pull/{user_id}', [SyncController::class, 'pull']);
+    Route::post('/push/{user_id}', [SyncController::class, 'push']);
 });
 
  

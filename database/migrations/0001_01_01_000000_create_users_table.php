@@ -23,8 +23,8 @@ return new class extends Migration
             $table->enum('role', ['user', 'admin'])->default('user');
             $table->string('avatarUrl')->nullable();
             $table->rememberToken();
+            $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
-            $table->timestamp('last_synced_at');
             $table->unique(['OAuthProvider', 'OAuthProviderId']);
         });
 

@@ -19,7 +19,7 @@ class NoteResource extends JsonResource
             'title' => $this->title ?? 'untitled',
             'body' => $this->body ?? '',
             'user_id' => $this->user_id,
-            'collection_id' => $this->collection_id ?? -1,
+            'collection_id' => $this->collection_id ?? 'unsorted',
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
         ];

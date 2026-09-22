@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['title', 'body', 'collection_id', 'user_id', 'isOrginal'])]
+#[Fillable(['title', 'body', 'collection_id', 'user_id', 'local_id'])]
 class Note extends Model
 {
     use HasFactory;
