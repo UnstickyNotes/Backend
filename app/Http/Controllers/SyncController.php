@@ -6,76 +6,95 @@ use \Illuminate\Database\Eloquent\Casts\Json;
 use App\Models\Collection;
 use App\Models\Note;
 use App\Models\User;
-use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class SyncController extends Controller {
-    private static function handleCreate(&$q){
-        $payload = Json::decode($q->payload);
+    private static function handleCreate($q){
+        $payload = Json::decode($q['payload']);
 
-        if($q->entity_type === 'collection'){
+        if($q['entity_type'] === 'collection'){
             $col = Collection::create([
-                'local_id' => $q->entity_id,
-                'user_id' => $q->user_id,
-                'name' => $payload->name
-            ])->first(['id', 'local_id', 'user_id']);
-            if ($col) return $col;
+                'local_id' => $q['entity_id'],
+                'user_id' => $q['user_id'],
+                'name' => $payload['name']
+            ]);
+            if ($col){
+                // $col['type'] = 'collection';
+                return $col;
+            }
             else return null;
         }
         else {
             $note = Note::create([
-                'local_id' => $q->entity_id,
-                'user_id' => $q->user_id,
-                'title' => $payload->title ?? null,
-                'body' => $payload->body ?? null,
-                'collection_id' => $payload->collection_id ?? null
+                'local_id' => $q['entity_id'],
+                'user_id' => $q['user_id'],
+                'title' => $payload['title'] ?? null,
+                'body' => $payload['body'] ?? null,
+                'collection_id' => $payload['collection_id'] ?? null
             ]);
-            if ($note) return $note;
+            if ($note) {
+                // $col['type'] = 'note';
+                return $note;
+            }
             else return null;
         }
     }
-    private static function handleUpdate(&$q){
-        $payload = json::decode($q->payload);
+    private static function handleUpdate($q){
+        $payload = json::decode($q['payload']);
 
-        if($q->entity_type === 'collection'){
-            $col = Collection::where('user_id', $q->user_id)
-                    ->where('local_id', $q->entity_id)
-                    ->first(['id', 'local_id', 'user_id']);
-            if($col)
+        if($q['entity_type'] === 'collection'){
+            $col = Collection::where('user_id', $q['user_id'])
+                    ->where('local_id', $q['entity_id'])
+                    ->first();
+            if($col){
                 $col->update($payload);
+                // $col['type'] = 'collection';
+            }
             else 
                 $col = null;
             return $col;
         }
         else{
-            $note = Note::where('user_id', $q->user_id)
-                    ->where('local_id', $q->entity_id)
-                    ->first(['id', 'local_id', 'user_id']);
-            if($note)
+            $note = Note::where('user_id', $q['user_id'])
+                    ->where('local_id', $q['entity_id'])
+                    ->first();
+            if($note){
                 $note->update($payload);
+                // $col['type'] = 'note';
+            }
             else 
                 $note = null;
             return $note;
         }
     }
-    private static function handleDelete(&$q){
-        if($q->entity_type === 'collection'){
-            $col = Collection::where('user_id', $q->user_id)
-                    ->where('local_id', $q->entity_id)
-                    ->first(['id', 'local_id', 'user_id']);
-            if($col)
+    private static function handleDelete($q){
+        if($q['entity_type'] === 'collection'){
+            $col = Collection::where('user_id', $q['user_id'])
+                    ->where('local_id', $q['entity_id'])
+                    ->first();
+            if($col){
+                $colNotes = Note::where('user_id', $q['user_id'])
+                    ->where('collection_id', $q['entity_id'])->get()->toArray();
+
+                Note::where('user_id', $q['user_id'])
+                    ->where('collection_id', $q['entity_id'])->delete();
+
+                $col['children_notes'] = $colNotes;
                 $col->delete();
+            }
             else 
                 $col = null;
             return $col;
         }
         else{
-            $note = Note::where('user_id', $q->user_id)
-                    ->where('local_id', $q->entity_id)
-                    ->first(['id', 'local_id', 'user_id']);
-            if($note)
+            $note = Note::where('user_id', $q['user_id'])
+                    ->where('local_id', $q['entity_id'])
+                    ->first();
+            if($note){
+                // $col['type'] = 'note';
                 $note->delete();
+            }
             else 
                 $note = null;
             return $note;
@@ -87,8 +106,7 @@ class SyncController extends Controller {
             return response()->error('Unauthorized', 403);
         }
         $last_synced_at = $request->query('last_synced_at');
-        // $last_synced_at_user = new DateTime($last_synced_at);
-        // dd($last_synced_at, $user->last_synced_at);
+
         if($last_synced_at == null){
             $last_synced_at_user = Carbon::createFromTimestamp(0);
         }
@@ -136,26 +154,23 @@ class SyncController extends Controller {
     }
 
     public function push(Request $request, $user_id){
-        if($user_id != $request->user->id) return response()->error('Unauthorized', 403);
+        if($user_id != $request->user()->id) return response()->error('Unauthorized', 403);
 
         $validated = $request->validate([
             'data' => 'nullable|string'
         ]);
         $queueData = Json::decode($validated['data']);
-        // dd($payload);
-        // if($queueData->user_id != $user_id) return response()->error('Unauthorized', 403);
-
+        
         $passedOperations = [];
         $failedOperations = [];
         $unauthorizedOperations = 0;
-
+        
         foreach($queueData as $q){
-            if ($q->user_id != $user_id ){
+            if ($q['user_id'] != $user_id ){
                 $unauthorizedOperations++;
             }
             else{
-                $dbres = null;
-                match ($q->action) {
+                match ($q['action']) {
                     "CREATE" => $dbres = SyncController::handleCreate($q),
                     "UPDATE" => $dbres = SyncController::handleUpdate($q),
                     "DELETE" => $dbres = SyncController::handleDelete($q),
@@ -164,19 +179,21 @@ class SyncController extends Controller {
                     $failedOperations[] = $q;
                 }
                 else{
-                    $dbres['type'] = $q->entity_type;
+                    $dbres['action'] = $q['action'];
+                    $dbres['type'] = $q['entity_type'];
                     $passedOperations[] = $dbres;
                 }
             }
         }
-        $now = now()->toIso8601String();
+        $now = now();
         User::where('id', $user_id)->update(['last_synced_at' => $now]);
         $data = [
-            'synced_at' => $now,
+            'synced_at' => $now->toIso8601String(),
             'passed' => $passedOperations,
             'failed' => $failedOperations,
             'unauthorized' => $unauthorizedOperations
         ];
+
         return response()->success($data, 'push status', 200);
     }
 }

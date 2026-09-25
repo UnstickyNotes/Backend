@@ -36,9 +36,9 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             return response()->error('Invalid credentials or not registered', 404);
         }
-        if (AccessTokens::where('tokenable_id', $user->id)->first()) { // delete existing token 
-            $user->tokens()->delete();
-        } 
+        // if (AccessTokens::where('tokenable_id', $user->id)->first()) { // delete existing token 
+        //     $user->tokens()->delete();
+        // } 
 
         $accessToken = $user->createToken('accessToken')->plainTextToken;
         $data = [
