@@ -77,10 +77,42 @@ class AuthController extends Controller
                 ]);
                 $accessToken = $user->createToken('accessToken')->plainTextToken;
             }
-            
-            return redirect('http://localhost:5173/oauth/callback?token=' . $accessToken);
+        $token = $user->createToken('unstickynotes-token')->plainTextToken;
+        $deepLinkUrl = "unstickynotes://oauth/callback?token={$token}";
+
+    // Return HTML page with JS auto-redirect and a fallback button
+        return response()->make("
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Authentication Successful</title>
+                <style>
+                    body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #18181b; color: #fff; margin: 0; }
+                    .card { text-align: center; padding: 2rem; background: #27272a; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+                    a { color: #38bdf8; text-decoration: none; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <div class=\"card\">
+                    <h2>Login Successful!</h2>
+                    <p>Redirecting you back to <strong>UnstickyNotes</strong>...</p>
+                    <p>If the app does not open automatically, <a href=\"{$deepLinkUrl}\">click here</a>.</p>
+                </div>
+                <script>
+                    // Trigger deep link redirect immediately
+                    window.location.href = \"{$deepLinkUrl}\";
+                    
+                    // Close browser tab after handoff if allowed
+                    setTimeout(() => {
+                        window.close();
+                    }, 2000);
+                </script>
+            </body>
+            </html>
+        ", 200, ['Content-Type' => 'text/html']);
+            // return redirect('unstickynotes://oauth/callback?token=' . $accessToken);
         }catch(Throwable){
-            return redirect('http://localhost:5173/oauth/callback?error=Google+sign-in+failed');
+            return redirect('unstickynotes://oauth/?error=Google+sign-in+failed');
         }
     }
 
