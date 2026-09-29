@@ -35,9 +35,9 @@ class AppServiceProvider extends ServiceProvider
                 'message' => $message,
             ], $code);
         });
-        
-        if(env('APP_ENV' === 'production')){
-            URL::forceScheme('https://');
+
+        if(config('app.env') === 'production'){
+            URL::forceScheme('https');
         }
     }
 }
